@@ -40,7 +40,8 @@ This project demonstrates practical AI engineering patterns:
 ## Setup
 
 ```bash
-cd /home/runner/work/AI-Engineer-Portfolio/AI-Engineer-Portfolio
+git clone https://github.com/taniavision21/AI-Engineer-Portfolio.git
+cd AI-Engineer-Portfolio
 python -m venv .venv
 source .venv/bin/activate
 pip install -r projects/computer-vision/requirements.txt

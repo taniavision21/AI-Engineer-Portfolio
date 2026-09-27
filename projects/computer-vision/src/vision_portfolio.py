@@ -119,6 +119,20 @@ def validate_result(payload: object) -> dict:
     if extra_keys:
         raise ValueError(f"Vision response has unexpected keys: {', '.join(sorted(extra_keys))}")
 
+    if not isinstance(payload["scene_summary"], str):
+        raise ValueError("Vision response field 'scene_summary' must be a string.")
+
+    for key in (
+        "visible_products",
+        "stock_risks",
+        "misplacements",
+        "accessibility_notes",
+        "recommended_actions",
+    ):
+        value = payload[key]
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+            raise ValueError(f"Vision response field '{key}' must be a list of strings.")
+
     return payload
 
 

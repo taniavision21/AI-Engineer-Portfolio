@@ -99,6 +99,23 @@ class VisionPortfolioTests(unittest.TestCase):
         self.assertEqual(kwargs["json"]["text"]["format"]["type"], "json_schema")
         self.assertTrue(kwargs["json"]["text"]["format"]["strict"])
 
+    def test_validate_result_rejects_missing_keys(self):
+        with self.assertRaises(ValueError):
+            vision_portfolio.validate_result({"scene_summary": "ok"})
+
+    def test_validate_result_rejects_wrong_field_types(self):
+        with self.assertRaises(ValueError):
+            vision_portfolio.validate_result(
+                {
+                    "scene_summary": "ok",
+                    "visible_products": "water",
+                    "stock_risks": [],
+                    "misplacements": [],
+                    "accessibility_notes": [],
+                    "recommended_actions": [],
+                }
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
