@@ -52,17 +52,13 @@ class VisionPortfolioTests(unittest.TestCase):
                 with self.assertRaises(EnvironmentError):
                     vision_portfolio.main()
 
-    def test_main_prints_raw_text_when_response_is_not_json(self):
+    def test_main_raises_for_non_json_response(self):
         args = Mock(image_url="https://example.com/x.png", image_path=None, model="gpt-4.1-mini")
         with patch.object(vision_portfolio, "parse_args", return_value=args):
             with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
                 with patch.object(vision_portfolio, "analyze_image", return_value="plain text result"):
-                    stdout = io.StringIO()
-                    with patch("sys.stdout", stdout):
-                        exit_code = vision_portfolio.main()
-
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout.getvalue().strip(), "plain text result")
+                    with self.assertRaises(ValueError):
+                        vision_portfolio.main()
 
     def test_main_prints_formatted_json_for_valid_object_response(self):
         args = Mock(image_url="https://example.com/x.png", image_path=None, model="gpt-4.1-mini")
@@ -116,7 +112,7 @@ class VisionPortfolioTests(unittest.TestCase):
                 }
             )
 
-    def test_main_prints_raw_text_when_json_schema_validation_fails(self):
+    def test_main_raises_when_json_schema_validation_fails(self):
         args = Mock(image_url="https://example.com/x.png", image_path=None, model="gpt-4.1-mini")
         invalid_object = (
             '{"scene_summary":"ok","visible_products":"water","stock_risks":[],'
@@ -125,12 +121,8 @@ class VisionPortfolioTests(unittest.TestCase):
         with patch.object(vision_portfolio, "parse_args", return_value=args):
             with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
                 with patch.object(vision_portfolio, "analyze_image", return_value=invalid_object):
-                    stdout = io.StringIO()
-                    with patch("sys.stdout", stdout):
-                        exit_code = vision_portfolio.main()
-
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout.getvalue().strip(), invalid_object)
+                    with self.assertRaises(ValueError):
+                        vision_portfolio.main()
 
 
 if __name__ == "__main__":
