@@ -40,22 +40,31 @@ def encode_image(path: str) -> str:
     return f"data:{mime_type};base64,{encoded}"
 
 
-def build_input(image_source: str) -> list[dict]:
+def build_message_content(image_url: str) -> list[dict]:
+    return [
+        {
+            "type": "input_text",
+            "text": (
+                "You are a computer vision assistant for an AI engineer portfolio. "
+                "Inspect the retail shelf image and return strict JSON with the keys "
+                "scene_summary, visible_products, stock_risks, misplacements, "
+                "accessibility_notes, and recommended_actions."
+            ),
+        },
+        {"type": "input_image", "image_url": image_url},
+    ]
+
+
+def build_input_from_path(image_path: str) -> list[dict]:
+    local_image_data_url = encode_image(image_path)
+    return [{"role": "user", "content": build_message_content(local_image_data_url)}]
+
+
+def build_input_from_url(image_url: str) -> list[dict]:
     return [
         {
             "role": "user",
-            "content": [
-                {
-                    "type": "input_text",
-                    "text": (
-                        "You are a computer vision assistant for an AI engineer portfolio. "
-                        "Inspect the retail shelf image and return strict JSON with the keys "
-                        "scene_summary, visible_products, stock_risks, misplacements, "
-                        "accessibility_notes, and recommended_actions."
-                    ),
-                },
-                {"type": "input_image", "image_url": image_source},
-            ],
+            "content": build_message_content(image_url),
         }
     ]
 
@@ -63,14 +72,18 @@ def build_input(image_source: str) -> list[dict]:
 def extract_text(response_json: dict) -> str:
     output = response_json.get("output", [])
     for item in output:
+        if item.get("type") != "message":
+            continue
         for content in item.get("content", []):
+            if content.get("type") == "output_text" and content.get("text"):
+                return content["text"]
             text = content.get("text")
-            if text:
+            if isinstance(text, str) and text:
                 return text
     raise ValueError("No text output found in API response.")
 
 
-def analyze_image(image_source: str, model: str, api_key: str) -> str:
+def analyze_image(input_payload: list[dict], model: str, api_key: str) -> str:
     response = requests.post(
         API_URL,
         headers={
@@ -79,7 +92,7 @@ def analyze_image(image_source: str, model: str, api_key: str) -> str:
         },
         json={
             "model": model,
-            "input": build_input(image_source),
+            "input": input_payload,
         },
         timeout=60,
     )
@@ -93,8 +106,12 @@ def main() -> int:
     if not api_key:
         raise EnvironmentError("OPENAI_API_KEY is required.")
 
-    image_source = args.image_url or encode_image(args.image_path)
-    result = analyze_image(image_source=image_source, model=args.model, api_key=api_key)
+    input_payload = (
+        build_input_from_url(args.image_url)
+        if args.image_url
+        else build_input_from_path(args.image_path)
+    )
+    result = analyze_image(input_payload=input_payload, model=args.model, api_key=api_key)
 
     try:
         parsed = json.loads(result)
