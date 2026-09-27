@@ -177,7 +177,7 @@ def main() -> int:
     try:
         parsed = validate_result(json.loads(result))
     except (json.JSONDecodeError, ValueError) as exc:
-        raise ValueError(f"Vision API returned invalid structured output: {result}") from exc
+        raise ValueError("Vision API returned invalid structured output.") from exc
 
     print(json.dumps(parsed, indent=2))
 
