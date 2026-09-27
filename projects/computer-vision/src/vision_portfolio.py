@@ -177,7 +177,7 @@ def main() -> int:
     try:
         parsed = validate_result(json.loads(result))
         print(json.dumps(parsed, indent=2))
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, ValueError):
         print(result)
 
     return 0

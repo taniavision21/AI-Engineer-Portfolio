@@ -116,6 +116,22 @@ class VisionPortfolioTests(unittest.TestCase):
                 }
             )
 
+    def test_main_prints_raw_text_when_json_schema_validation_fails(self):
+        args = Mock(image_url="https://example.com/x.png", image_path=None, model="gpt-4.1-mini")
+        invalid_object = (
+            '{"scene_summary":"ok","visible_products":"water","stock_risks":[],'
+            '"misplacements":[],"accessibility_notes":[],"recommended_actions":[]}'
+        )
+        with patch.object(vision_portfolio, "parse_args", return_value=args):
+            with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True):
+                with patch.object(vision_portfolio, "analyze_image", return_value=invalid_object):
+                    stdout = io.StringIO()
+                    with patch("sys.stdout", stdout):
+                        exit_code = vision_portfolio.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue().strip(), invalid_object)
+
 
 if __name__ == "__main__":
     unittest.main()
