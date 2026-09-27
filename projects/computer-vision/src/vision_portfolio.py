@@ -10,6 +10,26 @@ import requests
 
 DEFAULT_MODEL = "gpt-4.1-mini"
 API_URL = "https://api.openai.com/v1/responses"
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "scene_summary": {"type": "string"},
+        "visible_products": {"type": "array", "items": {"type": "string"}},
+        "stock_risks": {"type": "array", "items": {"type": "string"}},
+        "misplacements": {"type": "array", "items": {"type": "string"}},
+        "accessibility_notes": {"type": "array", "items": {"type": "string"}},
+        "recommended_actions": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": [
+        "scene_summary",
+        "visible_products",
+        "stock_risks",
+        "misplacements",
+        "accessibility_notes",
+        "recommended_actions",
+    ],
+    "additionalProperties": False,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,6 +90,10 @@ def build_input_from_url(image_url: str) -> list[dict]:
 
 
 def extract_text(response_json: dict) -> str:
+    output_text = response_json.get("output_text")
+    if isinstance(output_text, str) and output_text:
+        return output_text
+
     output = response_json.get("output", [])
     for item in output:
         if item.get("type") != "message":
@@ -93,6 +117,13 @@ def analyze_image(input_payload: list[dict], model: str, api_key: str) -> str:
         json={
             "model": model,
             "input": input_payload,
+            "text": {
+                "format": {
+                    "type": "json_schema",
+                    "name": "retail_shelf_audit",
+                    "schema": RESPONSE_SCHEMA,
+                }
+            },
         },
         timeout=60,
     )
