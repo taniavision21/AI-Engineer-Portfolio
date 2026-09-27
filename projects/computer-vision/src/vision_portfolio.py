@@ -107,6 +107,21 @@ def extract_text(response_json: dict) -> str:
     raise ValueError("No text output found in API response.")
 
 
+def validate_result(payload: object) -> dict:
+    if not isinstance(payload, dict):
+        raise ValueError("Vision response must be a JSON object.")
+
+    missing_keys = [key for key in RESPONSE_SCHEMA["required"] if key not in payload]
+    if missing_keys:
+        raise ValueError(f"Vision response is missing required keys: {', '.join(missing_keys)}")
+
+    extra_keys = set(payload) - set(RESPONSE_SCHEMA["properties"])
+    if extra_keys:
+        raise ValueError(f"Vision response has unexpected keys: {', '.join(sorted(extra_keys))}")
+
+    return payload
+
+
 def analyze_image(input_payload: list[dict], model: str, api_key: str) -> str:
     response = requests.post(
         API_URL,
@@ -122,6 +137,7 @@ def analyze_image(input_payload: list[dict], model: str, api_key: str) -> str:
                     "type": "json_schema",
                     "name": "retail_shelf_audit",
                     "schema": RESPONSE_SCHEMA,
+                    "strict": True,
                 }
             },
         },
@@ -145,7 +161,7 @@ def main() -> int:
     result = analyze_image(input_payload=input_payload, model=args.model, api_key=api_key)
 
     try:
-        parsed = json.loads(result)
+        parsed = validate_result(json.loads(result))
         print(json.dumps(parsed, indent=2))
     except json.JSONDecodeError:
         print(result)
