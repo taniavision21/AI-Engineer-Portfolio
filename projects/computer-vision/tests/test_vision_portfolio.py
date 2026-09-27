@@ -8,10 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 
-MODULE_PATH = (
-    Path("/home/runner/work/AI-Engineer-Portfolio/AI-Engineer-Portfolio")
-    / "projects/computer-vision/src/vision_portfolio.py"
-)
+MODULE_PATH = Path(__file__).resolve().parents[1] / "src/vision_portfolio.py"
 SPEC = importlib.util.spec_from_file_location("vision_portfolio", MODULE_PATH)
 vision_portfolio = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(vision_portfolio)
